@@ -19,7 +19,7 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		this.primaryStage = primaryStage;
-		this.primaryStage.setTitle("SAP HANA Database Monitoring 500");
+		this.primaryStage.setTitle("SAP HANA Database Monitoring");
 
 		// connect();
 		initRootLayout();

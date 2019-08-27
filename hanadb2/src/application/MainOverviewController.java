@@ -2,6 +2,7 @@ package application;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,7 +32,6 @@ public class MainOverviewController {
 	private Main mainApp;
 	public Connection connection;
 	protected ObservableList<ObservableList> data;
-	public boolean finished;
 	private Thread t1;
 
 	@FXML
@@ -44,68 +44,51 @@ public class MainOverviewController {
 	protected TableView tableView;
 
 	public final ObservableList<String> dataList = FXCollections.observableArrayList();
+	public static volatile String message = "";
+	public static boolean finished = false;
 
 	public void setMainApp(Main mainApp) {
 		this.mainApp = mainApp;
 		mainApp.conn = this.connection;
 	}
 
-	public Connection connect() {
-		try {
-			if (connection == null) {
-				Class.forName("oracle.jdbc.driver.OracleDriver");
-
-				/*
-				 * PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource();
-				 * pds.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
-				 * 
-				 * if (c_dbNames.getValue() == "CENAICST1") {
-				 * pds.setURL("jdbc:oracle:thin:system/szaolikK9595@cenaicst1:1521:TESTDB3"); }
-				 * else if (c_dbNames.getValue() == "LKSZDBT") {
-				 * pds.setURL("jdbc:oracle:thin:@//cenlksz2dbt-scan:1521/LKSZDB");
-				 * pds.setUser("monitoring"); pds.setPassword("UgO6raspO7"); } else if
-				 * (c_dbNames.getValue() == "LKSZDB") {
-				 * pds.setURL("jdbc:oracle:thin:@//cenlksz2db-scan:1521/LKSZDB");
-				 * pds.setUser("monitoring"); pds.setPassword("UgO6raspO7"); } // else if
-				 * (c_dbNames.getValue() == "LKSZDBDEV") { //
-				 * pds.setURL("jdbc:oracle:thin:@CENLKSZDBD1:1521:LKSZDBDEV"); //
-				 * pds.setUser("monitoring"); // pds.setPassword("UgO6raspO7"); // }
-				 * 
-				 * connection = pds.getConnection();
-				 */
+	public Connection connect() throws ClassNotFoundException {
+		if (connection == null) {
+			String connectionString = "jdbc:sap://jamborz-hxe.westeurope.cloudapp.azure.com:39013";
+			String user = "SYSTEM";
+			String password = "szaolikK9595";
+			try {
+				connection = DriverManager.getConnection(connectionString, user, password);
+			} catch (SQLException e) {
+				System.err.println("Connection Failed. User/Passwd Error? Message: " + e.getMessage());
 			}
-
-			return connection;
-		} catch (ClassNotFoundException e) {
-			Alert alert = new Alert(AlertType.ERROR);
-			alert.setTitle("Error");
-			alert.setHeaderText("Connection error");
-			// alert.setContentText(c_dbNames.getValue()); // e.getMessage());
-			alert.showAndWait();
-			return connection;
 		}
+		return connection;
 	}
 
 	protected String SqlText() {
-		String SQL = "select b.tablespace_name \"Tablespace\", round(a.bytes_alloc / 1024 / 1024, 0) as \"Allocated (Mb)\",\r\n"
-				+ "round(nvl(b.bytes_free, 0) / 1024 / 1024, 0) \"Free (Mb)\", round((a.bytes_alloc - nvl(b.bytes_free, 0)) / 1024 / 1024, 0) \"Used (Mb)\",\r\n"
-				+ "round((nvl(b.bytes_free, 0) / a.bytes_alloc) * 100,2) \"% Free\",\r\n"
-				+ "100 - round((nvl(b.bytes_free, 0) / a.bytes_alloc) * 100,2) \"% Used\",\r\n"
-				+ "round(maxbytes/1048576,0) \"Max (Mb)\" from (select f.tablespace_name, sum(f.bytes) bytes_alloc,\r\n"
-				+ "sum(decode(f.autoextensible, 'YES',f.maxbytes,'NO', f.bytes)) maxbytes\r\n"
-				+ "from dba_data_files f group by tablespace_name\r\n"
-				+ ") a, (select f.tablespace_name,sum(f.bytes) bytes_free from dba_free_space f\r\n"
-				+ "group by tablespace_name) b where a.tablespace_name = b.tablespace_name (+)\r\n"
-				+ "union SELECT TABLESPACE_NAME \"Tablespace\", FILESIZE as \"Allocated (Mb)\",\r\n"
-				+ "FILESIZE-USED as \"Free (Mb)\", USED \"Used (Mb)\",trunc(NVL(FILESIZE-USED,0.0)/FILESIZE * 1000) / 10 AS \"% Free\",\r\n"
-				+ "trunc(NVL(USED,0.0)/FILESIZE * 1000) / 10 AS \"% Used\",TOTAL \"Max (Mb)\"\r\n"
-				+ "FROM (SELECT TABLESPACE_NAME,SUM(FILESIZE) FILESIZE,SUM(TOTAL) TOTAL,SUM(used) USED FROM \r\n"
-				+ "(SELECT TABLESPACE_NAME, 0 FILESIZE,round(sum(TOTAL1),0) TOTAL,0 used FROM\r\n"
-				+ "(select a.TABLESPACE_NAME,A.AUTOEXTENSIBLE,round(a.bytes/1024/1024,2) FILESIZE,\r\n"
-				+ "decode (round(a.MAXBYTES/1024/1024,2), 0,round(a.bytes/1024/1024,2), round(a.MAXBYTES/1024/1024,2)) TOTAL1\r\n"
-				+ "FROM dba_temp_files A) GROUP BY TABLESPACE_NAME,0\r\n"
-				+ "union select TABLESPACE_NAME,round(TABLESPACE_SIZE/1024/1024,0) FILESIZE,0 TOTAL,round((TABLESPACE_SIZE-FREE_SPACE)/1024/1024,0) used\r\n"
-				+ "from dba_temp_free_space) GROUP BY TABLESPACE_NAME)";
+//		String SQL = "SELECT SUM(COL) AS \"Column Tables MB\", SUM(ROWSS) AS \"Row Tables MB\"\r\n"
+//				+ "FROM (SELECT round (sum(MEMORY_SIZE_IN_TOTAL)/1024/1024,2) AS COL,\r\n"
+//				+ "0 AS ROWSS FROM M_CS_TABLES union SELECT 0 AS COL,\r\n"
+//				+ "round (sum(USED_FIXED_PART_SIZE + USED_VARIABLE_PART_SIZE)/1024/1024,2) AS ROWSS FROM M_RS_TABLES);";
+
+//		String SQL = "select * from (select \"Host\",\"Database\",\"Component\",\"Used Memory Size MB\" from (select \"Host\",\r\n"
+//				+ "\"Database\", \"Component\", round (sum(\"Used Memory Exclusive\")/(1024*1024),2) as \"Used Memory Size MB\"\r\n"
+//				+ "from ( select t1.host \"Host\", t1.database_name \"Database\", component \"Component\", exclusive_size_in_use\r\n"
+//				+ "\"Used Memory Exclusive\" from sys_databases.m_heap_memory t1 join sys_databases.m_service_memory t2 on\r\n"
+//				+ "t1.host=t2.host and t1.port=t2.port and category != '/' and t1.component != 'Row Store Tables' where\r\n"
+//				+ "t1.database_name != '' and t1.database_name != 'SYSTEMDB' union ( select t1.host \"Host\",\r\n"
+//				+ "t1.database_name \"Database\", 'Row Store Tables' as \"Component\", allocated_size \"Used Memory Exclusive\"\r\n"
+//				+ "from sys_databases.m_rs_memory t1 join sys_databases.m_service_memory t2 on t1.host = t2.host and\r\n"
+//				+ "t1.port = t2.port and t1.database_name = t2.database_name where t1.database_name != '' and\r\n"
+//				+ "t1.database_name != 'SYSTEMDB' )) group by \"Host\", \"Database\",\"Component\")) order by \"Host\",\r\n"
+//				+ "\"Database\",\"Used Memory Size MB\" desc;";
+
+		String SQL = "select HOST, SERVICE_NAME, round(TOTAL_MEMORY_USED_SIZE/(1024*1024), 2) as \"Used Memory MB\"\r\n"
+				+ "from M_SERVICE_MEMORY;";
+
+		String sql2 = "SELECT A.DATABASE_NAME, A.HOST, A.SERVICE_NAME, B.DATA AS DATA_GB, C.LOG AS LOG_GB FROM \"SYS\".\"M_VOLUMES_\" AS A INNER JOIN (SELECT VOLUME_ID, DATABASE_NAME, ROUND(DATA_SIZE/1024/1024/1024, 3) AS DATA FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE LOG_SIZE =-1) AS B ON A.VOLUME_ID = B.VOLUME_ID AND A.DATABASE_NAME = B.DATABASE_NAME INNER JOIN\r\n"
+				+ "(SELECT VOLUME_ID, DATABASE_NAME, ROUND(LOG_SIZE/1024/1024/1024, 3) AS LOG FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE DATA_SIZE =-1) AS C ON B.VOLUME_ID = C.VOLUME_ID AND B.DATABASE_NAME = C.DATABASE_NAME;";
 
 		return SQL;
 	}
@@ -164,7 +147,6 @@ public class MainOverviewController {
 	}
 
 	protected void customResize(TableView<?> view) {
-
 		AtomicLong width = new AtomicLong();
 		view.getColumns().forEach(col -> {
 			width.addAndGet((long) col.getWidth());
@@ -180,12 +162,34 @@ public class MainOverviewController {
 
 	@FXML
 	private void handleConnect(ActionEvent t) throws SQLException, InterruptedException, IOException {
-		finished = true;
+		message = "Connecting...";
+		ctrlmsg.appendText(message + "\n");
+
+		t1 = new Thread(() -> {
+			try {
+				connect();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
+		});
+		t1.start();
+		t1.join();
+
+		message = "Connected to SAP HANA database.";
+		ctrlmsg.appendText(message + "\n");
+		Thread.sleep(500);
+
+		finished = false;
 		t1 = new Thread(() -> {
 			while (!finished) {
 				try {
-					Thread.sleep(5000);
+					message = "Querying data...";
+					Platform.runLater(() -> {
+						ctrlmsg.appendText(message + "\n");
+					});
+
 					buildData();
+					Thread.sleep(10000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -195,8 +199,11 @@ public class MainOverviewController {
 	}
 
 	@FXML
-	private void handleDisconnect() throws SQLException {
-		finished = false;
+	private void handleDisconnect() throws SQLException, InterruptedException {
+		finished = true;
+		message = "Exiting...";
+		ctrlmsg.appendText(message + "\n");
+		Thread.sleep(500);
 		try {
 			t1.join();
 		} catch (InterruptedException e) {
@@ -212,21 +219,25 @@ public class MainOverviewController {
 	}
 
 	@FXML
-	private void handleDisconnectAndExit() throws SQLException {
-		finished = false;
+	private void handleDisconnectAndExit() throws SQLException, InterruptedException {
+		message = "Exiting...";
+		ctrlmsg.appendText(message + "\n");
+		finished = true;
+		Thread.sleep(500);
 		try {
 			t1.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+
 		if (connection != null) {
 			// timeline.stop();
 			// timeline = null;
 			// ((ValidConnection) connection).setInvalid();
 			connection.close();
 			connection = null;
-			mainApp.conn.close();
-			mainApp.conn = null;
+			// mainApp.conn.close();
+			// mainApp.conn = null;
 		}
 		System.exit(0);
 	}
