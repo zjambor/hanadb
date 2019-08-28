@@ -171,23 +171,24 @@ public class MainOverviewController {
 			String SQL = sqltext;
 
 			ResultSet rs = connection.prepareStatement(SQL).executeQuery();
+			synchronized (rs) {
+				for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+					// We are using non property style for making dynamic table
+					final int j = i;
 
-			for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-				// We are using non property style for making dynamic table
-				final int j = i;
-
-				TableColumn col = new TableColumn(rs.getMetaData().getColumnName(i + 1));
-				col.setCellValueFactory(
-						new Callback<CellDataFeatures<ObservableList, String>, ObservableValue<String>>() {
-							public ObservableValue<String> call(CellDataFeatures<ObservableList, String> param) {
-								Object val = param.getValue().get(j);
-								if (val != null)
-									return new SimpleStringProperty(val.toString());
-								else
-									return new SimpleStringProperty("");
-							}
-						});
-				Platform.runLater(() -> tv.getColumns().addAll(col));
+					TableColumn col = new TableColumn(rs.getMetaData().getColumnName(i + 1));
+					col.setCellValueFactory(
+							new Callback<CellDataFeatures<ObservableList, String>, ObservableValue<String>>() {
+								public ObservableValue<String> call(CellDataFeatures<ObservableList, String> param) {
+									Object val = param.getValue().get(j);
+									if (val != null)
+										return new SimpleStringProperty(val.toString());
+									else
+										return new SimpleStringProperty("");
+								}
+							});
+					Platform.runLater(() -> tv.getColumns().addAll(col));
+				}
 			}
 
 			while (rs.next()) {
@@ -260,6 +261,7 @@ public class MainOverviewController {
 					buildData(tableView_services, SqlText_serv());
 					buildData(tableView_disk, SqlText_disk());
 					buildData(tableView_components, SqlText_comp());
+
 					Thread.sleep(10000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
