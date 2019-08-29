@@ -10,25 +10,26 @@
 
 <AnchorPane prefHeight="700.0" prefWidth="1330.0" style="-fx-background-color: white;" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.MainOverviewController">
          <children>
-            <Button fx:id="exit" layoutX="244.0" layoutY="38.0" mnemonicParsing="false" onAction="#handleDisconnectAndExit" text="Stop and exit" />
-            <TableView fx:id="tableView" layoutX="29.0" layoutY="103.0" prefHeight="188.0" prefWidth="447.0" />
+            <Button fx:id="exit" layoutX="237.0" layoutY="38.0" mnemonicParsing="false" onAction="#handleDisconnectAndExit" text="Stop and exit" />
+            <TableView fx:id="tableView" layoutX="29.0" layoutY="103.0" prefHeight="188.0" prefWidth="294.0" />
             <Button fx:id="start" layoutX="29.0" layoutY="38.0" mnemonicParsing="false" onAction="#handleConnect" text="Connect to SAP HANA DATABASE" />
             <TextArea fx:id="ctrlmsg" layoutX="1004.0" layoutY="40.0" prefHeight="47.0" prefWidth="253.0" />
-      <TableView fx:id="tableView_disk" layoutX="29.0" layoutY="339.0" prefHeight="188.0" prefWidth="447.0" />
-      <TableView fx:id="tableView_services" layoutX="506.0" layoutY="103.0" prefHeight="188.0" prefWidth="473.0" />
+      <TableView fx:id="tableView_disk" layoutX="29.0" layoutY="339.0" prefHeight="188.0" prefWidth="356.0" />
+      <TableView fx:id="tableView_services" layoutX="355.0" layoutY="103.0" prefHeight="188.0" prefWidth="356.0" />
       <Label layoutX="29.0" layoutY="82.0" text="MEMORY USAGE" />
       <Label layoutX="29.0" layoutY="316.0" text="DISK USAGE" />
-      <Label layoutX="506.0" layoutY="82.0" text="SERVICE INFORMATION" />
-      <Label layoutX="435.0" layoutY="37.0" text="SAP HANA DATABASE MONITORING">
+      <Label layoutX="355.0" layoutY="82.0" text="SERVICE INFORMATION" />
+      <Label layoutX="483.0" layoutY="37.0" text="SAP HANA DATABASE MONITORING" textAlignment="CENTER">
          <font>
             <Font size="18.0" />
          </font>
       </Label>
-      <ProgressBar fx:id="pb_memory" layoutX="506.0" layoutY="364.0" prefHeight="18.0" prefWidth="294.0" progress="0.0" />
-      <ProgressBar fx:id="pb_disk" layoutX="506.0" layoutY="433.0" prefHeight="18.0" prefWidth="294.0" progress="0.0" />
-      <Label layoutX="506.0" layoutY="342.0" text="Used memory of total memory" />
-      <Label layoutX="506.0" layoutY="409.0" text="Used disk of total disk space" />
-      <TableView fx:id="tableView_components" layoutX="824.0" layoutY="338.0" prefHeight="330.0" prefWidth="460.0" />
-      <Label layoutX="824.0" layoutY="316.0" text="DATABASE COMPONENTS" />
+      <ProgressBar fx:id="pb_memory" layoutX="411.0" layoutY="361.0" prefHeight="18.0" prefWidth="294.0" progress="0.0" />
+      <ProgressBar fx:id="pb_disk" layoutX="411.0" layoutY="430.0" prefHeight="18.0" prefWidth="294.0" progress="0.0" />
+      <Label layoutX="411.0" layoutY="339.0" text="Used memory of total memory" />
+      <Label layoutX="411.0" layoutY="406.0" text="Used disk of total disk space" />
+      <TableView fx:id="tableView_components" layoutX="729.0" layoutY="103.0" prefHeight="451.0" prefWidth="554.0" />
+      <Label layoutX="730.0" layoutY="82.0" text="DATABASE COMPONENTS" />
+      <Button fx:id="disconnect" layoutX="338.0" layoutY="38.0" mnemonicParsing="false" onAction="#handleDisconnect" text="Disconnect" />
          </children>
 </AnchorPane>

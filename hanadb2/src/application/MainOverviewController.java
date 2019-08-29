@@ -29,13 +29,19 @@ import javafx.util.Callback;
 public class MainOverviewController {
 	private Main mainApp;
 	public Connection connection;
-	protected ObservableList<ObservableList> data;
+	protected ObservableList<ObservableList> data_m;
+	protected ObservableList<ObservableList> data_disk;
+	protected ObservableList<ObservableList> data_srv;
+	protected ObservableList<ObservableList> data_comp;
 	private Thread t1;
+	private Thread t2;
 
 	@FXML
 	private Button exit;
 	@FXML
 	private Button start;
+	@FXML
+	private Button disconnect;
 	@FXML
 	public TextArea ctrlmsg;
 	@FXML
@@ -62,7 +68,8 @@ public class MainOverviewController {
 	@FXML
 	private Label redo_blocks_writtenLabel;
 
-	public final ObservableList<String> dataList = FXCollections.observableArrayList();
+	// public final ObservableList<String> dataList =
+	// FXCollections.observableArrayList();
 	public static volatile String message = "";
 	public static boolean finished = false;
 
@@ -162,57 +169,101 @@ public class MainOverviewController {
 	}
 
 	@SuppressWarnings({ "unchecked" })
-	protected void buildData(TableView tv, String sqltext) {
-		data = FXCollections.observableArrayList();
+	protected void buildData(TableView tv, String sqltext, ObservableList<ObservableList> data, int k) {
+
 		if (connection == null) {
 			this.connection = mainApp.conn;
 		}
 		try {
 			String SQL = sqltext;
-
 			ResultSet rs = connection.prepareStatement(SQL).executeQuery();
-			synchronized (rs) {
-				for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-					// We are using non property style for making dynamic table
-					final int j = i;
+//			Platform.runLater(() -> {
+//				tv.getColumns().clear();
+//			});
+			for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+				final int j = i;
 
-					TableColumn col = new TableColumn(rs.getMetaData().getColumnName(i + 1));
-					col.setCellValueFactory(
-							new Callback<CellDataFeatures<ObservableList, String>, ObservableValue<String>>() {
-								public ObservableValue<String> call(CellDataFeatures<ObservableList, String> param) {
-									Object val = param.getValue().get(j);
-									if (val != null)
-										return new SimpleStringProperty(val.toString());
-									else
-										return new SimpleStringProperty("");
-								}
-							});
-					Platform.runLater(() -> tv.getColumns().addAll(col));
-				}
+				TableColumn col = new TableColumn(rs.getMetaData().getColumnName(i + 1));
+				col.setCellValueFactory(
+						new Callback<CellDataFeatures<ObservableList, String>, ObservableValue<String>>() {
+							public ObservableValue<String> call(CellDataFeatures<ObservableList, String> param) {
+								Object val = param.getValue().get(j);
+								if (val != null)
+									return new SimpleStringProperty(val.toString());
+								else
+									return new SimpleStringProperty("");
+							}
+						});
+				Platform.runLater(() -> {
+					tv.getColumns().addAll(col);
+				});
 			}
 
+			data = null;
+			data = FXCollections.observableArrayList();
+
 			while (rs.next()) {
-				// Iterate Row
 				ObservableList<String> row = FXCollections.observableArrayList();
 				for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
-					// Iterate Column
 					row.add(rs.getString(i));
 				}
 
 				data.addAll(row);
 			}
 
-			// FINALLY ADDED TO TableView
-			Platform.runLater(() -> {
-				tv.setItems(data);
-				tv.setColumnResizePolicy((param) -> true);
-				customResize(tv);
-			});
+//			data_m.clear();
+//			data_srv.clear();
+//			data_disk.clear();
+//			data_comp.clear();
+			switch (k) {
+			case 0:
+				data_m = data;
+				break;
+			case 1:
+				data_srv = data;
+				break;
+			case 2:
+				data_disk = data;
+				break;
+			case 3:
+				data_comp = data;
+				break;
+			default:
+				break;
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Error on Building Data");
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void refreshViews() {
+		Platform.runLater(() -> {
+			tableView.setItems(data_m);
+			tableView.setColumnResizePolicy((param) -> true);
+			customResize(tableView);
+		});
+
+		Platform.runLater(() -> {
+			tableView_services.setItems(data_srv);
+			tableView_services.setColumnResizePolicy((param) -> true);
+			customResize(tableView_services);
+		});
+
+		Platform.runLater(() -> {
+			tableView_disk.setItems(data_disk);
+			tableView_disk.setColumnResizePolicy((param) -> true);
+			customResize(tableView_disk);
+		});
+
+		Platform.runLater(() -> {
+			tableView_components.setItems(data_comp);
+			tableView_components.setColumnResizePolicy((param) -> true);
+			customResize(tableView_components);
+		});
+
 	}
 
 	protected void customResize(TableView<?> view) {
@@ -248,6 +299,12 @@ public class MainOverviewController {
 		ctrlmsg.appendText(message + "\n");
 		Thread.sleep(500);
 
+		buildData(tableView, SqlText_mem(), data_m, 0);
+		buildData(tableView_services, SqlText_serv(), data_srv, 1);
+		buildData(tableView_disk, SqlText_disk(), data_disk, 2);
+		buildData(tableView_components, SqlText_comp(), data_comp, 3);
+//		refreshViews();
+
 		finished = false;
 		t1 = new Thread(() -> {
 			while (!finished) {
@@ -257,10 +314,10 @@ public class MainOverviewController {
 						ctrlmsg.appendText(message + "\n");
 					});
 
-					buildData(tableView, SqlText_mem());
-					buildData(tableView_services, SqlText_serv());
-					buildData(tableView_disk, SqlText_disk());
-					buildData(tableView_components, SqlText_comp());
+					buildData(tableView, SqlText_mem(), data_m, 0);
+					buildData(tableView_services, SqlText_serv(), data_srv, 1);
+					buildData(tableView_disk, SqlText_disk(), data_disk, 2);
+					buildData(tableView_components, SqlText_comp(), data_comp, 3);
 
 					Thread.sleep(10000);
 				} catch (InterruptedException e) {
@@ -269,23 +326,34 @@ public class MainOverviewController {
 			}
 		});
 		t1.start();
+
+		t2 = new Thread(() -> {
+			while (!finished) {
+				refreshViews();
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		t2.start();
 	}
 
 	@FXML
 	private void handleDisconnect() throws SQLException, InterruptedException {
-		finished = true;
 		message = "Exiting...";
 		ctrlmsg.appendText(message + "\n");
+		finished = true;
 		Thread.sleep(500);
 		try {
 			t1.join();
+			t2.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+
 		if (connection != null) {
-			// timeline.stop();
-			// timeline = null;
-			// ((ValidConnection) connection).setInvalid();
 			connection.close();
 			connection = null;
 		}
@@ -299,18 +367,14 @@ public class MainOverviewController {
 		Thread.sleep(500);
 		try {
 			t1.join();
+			t2.join();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 
 		if (connection != null) {
-			// timeline.stop();
-			// timeline = null;
-			// ((ValidConnection) connection).setInvalid();
 			connection.close();
 			connection = null;
-			// mainApp.conn.close();
-			// mainApp.conn = null;
 		}
 		System.exit(0);
 	}
