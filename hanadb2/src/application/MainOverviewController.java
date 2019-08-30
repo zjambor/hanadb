@@ -99,7 +99,7 @@ public class MainOverviewController {
 	}
 
 	protected String SqlText_mem() {
-		String SQL = "SELECT SUM(COL) AS \"Column Tables MB\", SUM(ROWSS) AS \"Row Tables MB\"\r\n"
+		String SQL = "SELECT TO_VARCHAR(round(SUM(COL),2,ROUND_HALF_UP),'9999.99') AS \"Column Tables MB\", TO_VARCHAR(round(SUM(ROWSS),2,ROUND_HALF_UP),'9999.99') AS \"Row Tables MB\"\r\n"
 				+ "FROM (SELECT round (sum(MEMORY_SIZE_IN_TOTAL)/1024/1024,2) AS COL,\r\n"
 				+ "0 AS ROWSS FROM M_CS_TABLES union SELECT 0 AS COL,\r\n"
 				+ "round (sum(USED_FIXED_PART_SIZE + USED_VARIABLE_PART_SIZE)/1024/1024,2) AS ROWSS FROM M_RS_TABLES);";
@@ -108,21 +108,21 @@ public class MainOverviewController {
 	}
 
 	protected String SqlText_serv() {
-		String SQL = "select HOST, SERVICE_NAME, round(TOTAL_MEMORY_USED_SIZE/(1024*1024), 2) as \"Used Memory MB\"\r\n"
+		String SQL = "select HOST, SERVICE_NAME, TO_VARCHAR(round(TOTAL_MEMORY_USED_SIZE/(1024*1024), 2),'9999.99') as \"Used Memory MB\"\r\n"
 				+ "from M_SERVICE_MEMORY;";
 		return SQL;
 	}
 
 	protected String SqlText_disk() {
-		String SQL = "SELECT A.DATABASE_NAME, A.HOST, A.SERVICE_NAME, B.DATA AS DATA_GB, C.LOG AS LOG_GB FROM \"SYS\".\"M_VOLUMES_\" AS A INNER JOIN (SELECT VOLUME_ID, DATABASE_NAME, ROUND(DATA_SIZE/1024/1024/1024, 3) AS DATA FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE LOG_SIZE =-1) AS B ON A.VOLUME_ID = B.VOLUME_ID AND A.DATABASE_NAME = B.DATABASE_NAME INNER JOIN\r\n"
-				+ "(SELECT VOLUME_ID, DATABASE_NAME, ROUND(LOG_SIZE/1024/1024/1024, 3) AS LOG FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE DATA_SIZE =-1) AS C ON B.VOLUME_ID = C.VOLUME_ID AND B.DATABASE_NAME = C.DATABASE_NAME;";
+		String SQL = "SELECT A.DATABASE_NAME, A.HOST, A.SERVICE_NAME, B.DATA AS DATA_GB, C.LOG AS LOG_GB FROM \"SYS\".\"M_VOLUMES_\" AS A INNER JOIN (SELECT VOLUME_ID, DATABASE_NAME, TO_VARCHAR(ROUND(DATA_SIZE/1024/1024/1024, 2),'9999.99') AS DATA FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE LOG_SIZE =-1) AS B ON A.VOLUME_ID = B.VOLUME_ID AND A.DATABASE_NAME = B.DATABASE_NAME INNER JOIN\r\n"
+				+ "(SELECT VOLUME_ID, DATABASE_NAME, TO_VARCHAR(ROUND(LOG_SIZE/1024/1024/1024, 2),'9999.99') AS LOG FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE DATA_SIZE =-1) AS C ON B.VOLUME_ID = C.VOLUME_ID AND B.DATABASE_NAME = C.DATABASE_NAME;";
 
 		return SQL;
 	}
 
 	protected String SqlText_comp() {
 		String SQL = "select * from (select \"Host\",\"Database\",\"Component\",\"Used Memory Size MB\" from (select \"Host\",\r\n"
-				+ "\"Database\", \"Component\", round (sum(\"Used Memory Exclusive\")/(1024*1024),2) as \"Used Memory Size MB\"\r\n"
+				+ "\"Database\", \"Component\", TO_VARCHAR(round(sum(\"Used Memory Exclusive\")/(1024*1024),2),'9999.99') as \"Used Memory Size MB\"\r\n"
 				+ "from ( select t1.host \"Host\", t1.database_name \"Database\", component \"Component\", exclusive_size_in_use\r\n"
 				+ "\"Used Memory Exclusive\" from sys_databases.m_heap_memory t1 join sys_databases.m_service_memory t2 on\r\n"
 				+ "t1.host=t2.host and t1.port=t2.port and category != '/' and t1.component != 'Row Store Tables' where\r\n"
@@ -168,36 +168,35 @@ public class MainOverviewController {
 		usedTempInd.setProgress(usedTempPercent / 100);
 	}
 
-	@SuppressWarnings({ "unchecked" })
+	@SuppressWarnings("unchecked")
+	private void buildHeader(TableView tv, String sqltext) throws SQLException {
+		ResultSet rs = connection.prepareStatement(sqltext).executeQuery();
+		for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
+			final int j = i;
+
+			TableColumn col = new TableColumn(rs.getMetaData().getColumnName(i + 1));
+			col.setCellValueFactory(new Callback<CellDataFeatures<ObservableList, String>, ObservableValue<String>>() {
+				public ObservableValue<String> call(CellDataFeatures<ObservableList, String> param) {
+					Object val = param.getValue().get(j);
+					if (val != null)
+						return new SimpleStringProperty(val.toString());
+					else
+						return new SimpleStringProperty("");
+				}
+			});
+			Platform.runLater(() -> {
+				tv.getColumns().addAll(col);
+			});
+		}
+	}
+
 	protected void buildData(TableView tv, String sqltext, ObservableList<ObservableList> data, int k) {
 
 		if (connection == null) {
 			this.connection = mainApp.conn;
 		}
 		try {
-			String SQL = sqltext;
-			ResultSet rs = connection.prepareStatement(SQL).executeQuery();
-//			Platform.runLater(() -> {
-//				tv.getColumns().clear();
-//			});
-			for (int i = 0; i < rs.getMetaData().getColumnCount(); i++) {
-				final int j = i;
-
-				TableColumn col = new TableColumn(rs.getMetaData().getColumnName(i + 1));
-				col.setCellValueFactory(
-						new Callback<CellDataFeatures<ObservableList, String>, ObservableValue<String>>() {
-							public ObservableValue<String> call(CellDataFeatures<ObservableList, String> param) {
-								Object val = param.getValue().get(j);
-								if (val != null)
-									return new SimpleStringProperty(val.toString());
-								else
-									return new SimpleStringProperty("");
-							}
-						});
-				Platform.runLater(() -> {
-					tv.getColumns().addAll(col);
-				});
-			}
+			ResultSet rs = connection.prepareStatement(sqltext).executeQuery();
 
 			data = null;
 			data = FXCollections.observableArrayList();
@@ -210,11 +209,6 @@ public class MainOverviewController {
 
 				data.addAll(row);
 			}
-
-//			data_m.clear();
-//			data_srv.clear();
-//			data_disk.clear();
-//			data_comp.clear();
 			switch (k) {
 			case 0:
 				data_m = data;
@@ -299,6 +293,11 @@ public class MainOverviewController {
 		ctrlmsg.appendText(message + "\n");
 		Thread.sleep(500);
 
+		buildHeader(tableView, SqlText_mem());
+		buildHeader(tableView_services, SqlText_serv());
+		buildHeader(tableView_disk, SqlText_disk());
+		buildHeader(tableView_components, SqlText_comp());
+
 		buildData(tableView, SqlText_mem(), data_m, 0);
 		buildData(tableView_services, SqlText_serv(), data_srv, 1);
 		buildData(tableView_disk, SqlText_disk(), data_disk, 2);
@@ -313,13 +312,11 @@ public class MainOverviewController {
 					Platform.runLater(() -> {
 						ctrlmsg.appendText(message + "\n");
 					});
-
+					Thread.sleep(10000);
 					buildData(tableView, SqlText_mem(), data_m, 0);
 					buildData(tableView_services, SqlText_serv(), data_srv, 1);
 					buildData(tableView_disk, SqlText_disk(), data_disk, 2);
 					buildData(tableView_components, SqlText_comp(), data_comp, 3);
-
-					Thread.sleep(10000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
