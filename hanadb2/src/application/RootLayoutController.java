@@ -101,15 +101,15 @@ public class RootLayoutController {
 
 				Scene scene = new Scene(longruntimesqlOverview, width, height);
 
-				// LongRuntimeSQLController controller = loader.getController();
-				//
-				// Stage stage = new Stage();
-				// stage.setScene(scene);
-				// controller.setMainApp(mainApp);
-				// controller.buildData();
-				//
-				// stage.setTitle("LONG RUNTIME SQL");
-				// stage.show();
+				LongRuntimeSQLController controller = loader.getController();
+
+				Stage stage = new Stage();
+				stage.setScene(scene);
+				controller.setMainApp(mainApp);
+				controller.buildData();
+
+				stage.setTitle("LONG RUNTIME SQL");
+				stage.show();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
