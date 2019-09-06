@@ -116,6 +116,36 @@ public class RootLayoutController {
 		}
 	}
 
+	@FXML
+	private void handleInsert() {
+		try {
+			this.connection = mainApp.conn;
+			if (connection != null) {
+				FXMLLoader loader = new FXMLLoader();
+				loader.setLocation(Main.class.getResource("view/LongRuntimeSQL.fxml"));
+				AnchorPane longruntimesqlOverview = (AnchorPane) loader.load();
+
+				Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
+				double width = screenSize.getWidth() - 50;
+				double height = screenSize.getHeight() - 100;
+
+				Scene scene = new Scene(longruntimesqlOverview, width, height);
+
+				InsertDataController controller = loader.getController();
+
+				Stage stage = new Stage();
+				stage.setScene(scene);
+				controller.setMainApp(mainApp);
+				// controller.buildData();
+
+				stage.setTitle("INSERT DATA");
+				stage.show();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public void newTablespacesWindow() {
 		try {
 			connection = mainApp.conn;

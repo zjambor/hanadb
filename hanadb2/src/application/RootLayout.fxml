@@ -23,6 +23,7 @@
               <items>
                 <MenuItem mnemonicParsing="false" onAction="#handleTopSQL" text="Top SQL" />
                   <MenuItem mnemonicParsing="false" onAction="#handleLongRuntimeSQL" text="Long Runtime SQL" />
+                  <MenuItem mnemonicParsing="false" onAction="#handleInsert" text="Insert Data" />
               </items>
             </Menu>
             <Menu mnemonicParsing="false" text="Storage">
