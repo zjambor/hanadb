@@ -40,6 +40,6 @@ public class InsertDataController {
 	}
 
 	private void insert_data() {
-
+		// insert data
 	}
 }
