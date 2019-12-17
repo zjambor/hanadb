@@ -167,12 +167,12 @@ public class LongRuntimeSQLController {
 					.getSelectedItems().get(0);
 			// String first_Column = selectedItems.toString().split(",")[16].substring(1);
 
-			String planText = "";
+			var planText = "";
 
-			String sql_id = selectedItems.get(7);
-			String query = "select plan_table_output from table(dbms_xplan.display_cursor('" + sql_id + "'))";
+			var sql_id = selectedItems.get(7);
+			var query = "select plan_table_output from table(dbms_xplan.display_cursor('" + sql_id + "'))";
 
-			ResultSet r = connection.prepareStatement(query).executeQuery();
+			var r = connection.prepareStatement(query).executeQuery();
 
 			while (r.next()) {
 				planText += r.getString("plan_table_output");
@@ -185,7 +185,7 @@ public class LongRuntimeSQLController {
 	}
 
 	@FXML
-	private void refresh() throws SQLException {
+	private void refresh() {
 		buildData();
 	}
 }
