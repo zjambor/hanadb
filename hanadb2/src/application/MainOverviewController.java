@@ -362,11 +362,13 @@ public class MainOverviewController {
 		ctrlmsg.appendText(message + "\n");
 		finished = true;
 		Thread.sleep(500);
-		try {
-			t1.join();
-			t2.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		if(t1 != null && t2 != null) {
+			try {
+				t1.join();
+				t2.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
 		if (connection != null) {
