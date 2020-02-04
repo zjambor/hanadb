@@ -87,8 +87,8 @@ public class MainOverviewController {
 	public Connection connect() throws ClassNotFoundException {
 		if (connection == null) {
 			String connectionString = "jdbc:sap://jamborz-hxe.westeurope.cloudapp.azure.com:39013";
-			String user = "SYSTEM";
-			String password = "szaolikK9595";
+			String user = "";
+			String password = "";
 			try {
 				connection = DriverManager.getConnection(connectionString, user, password);
 			} catch (SQLException e) {
