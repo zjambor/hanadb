@@ -2,11 +2,19 @@
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
     <data-source source="LOCAL" name="jdbc:sap://jamborz-hxe.westeurope.cloudapp.azure.com:39013" uuid="c0ed44b6-2c6c-4d6b-865b-606d75f6e24b">
+      <driver-ref>java.sql.Driver</driver-ref>
       <synchronize>true</synchronize>
       <configured-by-url>true</configured-by-url>
       <remarks>SAP HANA</remarks>
       <jdbc-driver>com.sap.db.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:sap://jamborz-hxe.westeurope.cloudapp.azure.com:39013</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="SAP HANA - NEO" uuid="ffc2c3a6-76e2-4e85-802d-93791c749623">
+      <driver-ref>java.sql.Driver</driver-ref>
+      <synchronize>true</synchronize>
+      <configured-by-url>true</configured-by-url>
+      <jdbc-driver>com.sap.db.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:sap://localhost:30015/</jdbc-url>
     </data-source>
   </component>
 </project>

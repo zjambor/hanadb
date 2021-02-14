@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javafx.collections.FXCollections;
@@ -87,8 +88,11 @@ public class MainOverviewController {
 	public Connection connect() throws ClassNotFoundException {
 		if (connection == null) {
 			String connectionString = "jdbc:sap://jamborz-hxe.westeurope.cloudapp.azure.com:39013";
-			String user = "SYSTEM";
-			String password = "szaolikK9595";
+			// a1e8ca07-b300-4615-9a10-446fe74166aa.hana.trial-eu10.hanacloud.ondemand.com:443
+			//String connectionString = "jdbc:sap://localhost:30015";
+			// "jdbc:sap://jamborz-hxe.westeurope.cloudapp.azure.com:39013";
+			String user = "";
+			String password = "";
 			try {
 				connection = DriverManager.getConnection(connectionString, user, password);
 			} catch (SQLException e) {
@@ -99,7 +103,7 @@ public class MainOverviewController {
 	}
 
 	protected String SqlText_mem() {
-		String SQL = "SELECT TO_VARCHAR(round(SUM(COL),2,ROUND_HALF_UP),'9999.99') AS \"Column Tables MB\", TO_VARCHAR(round(SUM(ROWSS),2,ROUND_HALF_UP),'9999.99') AS \"Row Tables MB\"\r\n"
+		String SQL = "SELECT round(SUM(COL),2,ROUND_HALF_UP) AS \"Column Tables MB\", round(SUM(ROWSS),2,ROUND_HALF_UP) AS \"Row Tables MB\"\r\n"
 				+ "FROM (SELECT round (sum(MEMORY_SIZE_IN_TOTAL)/1024/1024,2) AS COL,\r\n"
 				+ "0 AS ROWSS FROM M_CS_TABLES union SELECT 0 AS COL,\r\n"
 				+ "round (sum(USED_FIXED_PART_SIZE + USED_VARIABLE_PART_SIZE)/1024/1024,2) AS ROWSS FROM M_RS_TABLES);";
@@ -108,30 +112,29 @@ public class MainOverviewController {
 	}
 
 	protected String SqlText_serv() {
-		String SQL = "select HOST, SERVICE_NAME, TO_VARCHAR(round(TOTAL_MEMORY_USED_SIZE/(1024*1024), 2),'9999.99') as \"Used Memory MB\"\r\n"
+		String SQL = "select HOST, SERVICE_NAME, round(TOTAL_MEMORY_USED_SIZE/(1024*1024), 2) as \"Used Memory MB\"\r\n"
 				+ "from M_SERVICE_MEMORY;";
 		return SQL;
 	}
 
 	protected String SqlText_disk() {
-		String SQL = "SELECT A.DATABASE_NAME, A.HOST, A.SERVICE_NAME, B.DATA AS DATA_GB, C.LOG AS LOG_GB FROM \"SYS\".\"M_VOLUMES_\" AS A INNER JOIN (SELECT VOLUME_ID, DATABASE_NAME, TO_VARCHAR(ROUND(DATA_SIZE/1024/1024/1024, 2),'9999.99') AS DATA FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE LOG_SIZE =-1) AS B ON A.VOLUME_ID = B.VOLUME_ID AND A.DATABASE_NAME = B.DATABASE_NAME INNER JOIN\r\n"
-				+ "(SELECT VOLUME_ID, DATABASE_NAME, TO_VARCHAR(ROUND(LOG_SIZE/1024/1024/1024, 2),'9999.99') AS LOG FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE DATA_SIZE =-1) AS C ON B.VOLUME_ID = C.VOLUME_ID AND B.DATABASE_NAME = C.DATABASE_NAME;";
+		String SQL = "SELECT A.DATABASE_NAME, A.HOST, A.SERVICE_NAME, B.DATA AS DATA_GB, C.LOG AS LOG_GB FROM \"SYS\".\"M_VOLUMES_\" AS A INNER JOIN (SELECT VOLUME_ID, DATABASE_NAME, ROUND(DATA_SIZE/1024/1024, 2) AS DATA FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE LOG_SIZE =-1) AS B ON A.VOLUME_ID = B.VOLUME_ID AND A.DATABASE_NAME = B.DATABASE_NAME INNER JOIN\r\n"
+				+ "(SELECT VOLUME_ID, DATABASE_NAME, ROUND(LOG_SIZE/1024/1024, 2) AS LOG FROM \"SYS\".\"M_VOLUME_SIZES_\" WHERE DATA_SIZE =-1) AS C ON B.VOLUME_ID = C.VOLUME_ID AND B.DATABASE_NAME = C.DATABASE_NAME;";
 
 		return SQL;
 	}
 
 	protected String SqlText_comp() {
-		String SQL = "select * from (select \"Host\",\"Database\",\"Component\",\"Used Memory Size MB\" from (select \"Host\",\r\n"
-				+ "\"Database\", \"Component\", TO_VARCHAR(round(sum(\"Used Memory Exclusive\")/(1024*1024),2),'9999.99') as \"Used Memory Size MB\"\r\n"
-				+ "from ( select t1.host \"Host\", t1.database_name \"Database\", component \"Component\", exclusive_size_in_use\r\n"
-				+ "\"Used Memory Exclusive\" from sys_databases.m_heap_memory t1 join sys_databases.m_service_memory t2 on\r\n"
-				+ "t1.host=t2.host and t1.port=t2.port and category != '/' and t1.component != 'Row Store Tables' where\r\n"
-				+ "t1.database_name != '' and t1.database_name != 'SYSTEMDB' union ( select t1.host \"Host\",\r\n"
-				+ "t1.database_name \"Database\", 'Row Store Tables' as \"Component\", allocated_size \"Used Memory Exclusive\"\r\n"
-				+ "from sys_databases.m_rs_memory t1 join sys_databases.m_service_memory t2 on t1.host = t2.host and\r\n"
-				+ "t1.port = t2.port and t1.database_name = t2.database_name where t1.database_name != '' and\r\n"
-				+ "t1.database_name != 'SYSTEMDB' )) group by \"Host\", \"Database\",\"Component\")) order by \"Host\",\r\n"
-				+ "\"Database\",\"Used Memory Size MB\" desc;";
+		String SQL = "select * from (select \"Host\",\"Database\",\"Component\",\"Used Memory Size MB\" from (select \"Host\",\n" +
+				"\"Database\", \"Component\", round(sum(\"Used Memory Exclusive\")/(1024*1024),2) as \"Used Memory Size MB\"\n" +
+				"from ( select t1.host \"Host\", null \"Database\", component \"Component\", exclusive_size_in_use\n" +
+				"\"Used Memory Exclusive\" from m_heap_memory t1 join m_service_memory t2 on\n" +
+				"t1.host=t2.host and t1.port=t2.port and category != '/' and t1.component != 'Row Store Tables'\n" +
+				"union ( select t1.host \"Host\",\n" +
+				"null \"Database\", 'Row Store Tables' as \"Component\", allocated_size \"Used Memory Exclusive\"\n" +
+				"from m_rs_memory t1 join m_service_memory t2 on t1.host = t2.host and\n" +
+				"t1.port = t2.port )) group by \"Host\", \"Database\",\"Component\")) order by \"Host\",\n" +
+				"\"Database\",\"Used Memory Size MB\" desc;";
 
 		return SQL;
 	}

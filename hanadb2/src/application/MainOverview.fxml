@@ -28,8 +28,10 @@
       <ProgressBar fx:id="pb_disk" layoutX="29.0" layoutY="616.0" prefHeight="18.0" prefWidth="294.0" progress="0.0" />
       <Label layoutX="29.0" layoutY="542.0" text="Used memory of total memory" />
       <Label layoutX="29.0" layoutY="592.0" text="Used disk of total disk space" />
-      <TableView fx:id="tableView_components" layoutX="729.0" layoutY="103.0" prefHeight="451.0" prefWidth="662.0" />
+      <TableView fx:id="tableView_components" layoutX="729.0" layoutY="103.0" prefHeight="188.0" prefWidth="662.0" />
       <Label layoutX="730.0" layoutY="82.0" text="DATABASE COMPONENTS" />
       <Button fx:id="disconnect" layoutX="338.0" layoutY="38.0" mnemonicParsing="false" onAction="#handleDisconnect" text="Disconnect" />
+      <TableView fx:id="tableView_components1" layoutX="729.0" layoutY="339.0" prefHeight="188.0" prefWidth="662.0" />
+      <Label layoutX="730.0" layoutY="316.0" text="REAL TIME SQL" />
          </children>
 </AnchorPane>
